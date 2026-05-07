@@ -35,6 +35,10 @@ Kimi API 中转代理，基于 Vercel Edge Function 构建。只需提供 Kimi A
 
 等待约 30 秒，即可获得你的专属代理地址。
 
+> ⚠️ **注意仓库可见性**：Vercel 的 Deploy Button 默认可能将你的 GitHub 仓库创建为 **Private（私有）**。如果你希望仓库是公开的，部署完成后可以前往 GitHub → 该仓库 → Settings → Danger Zone → **Change repository visibility** → 改为 Public。
+>
+> 如果你想直接部署到公开仓库，推荐改用下方的「本地脚本部署」方式。
+
 ### 点击按钮后遇到 404？
 
 如果点击 Deploy Button 后页面显示 `404: NOT_FOUND`，通常是 **Vercel 与 GitHub 的连接状态** 问题，按以下步骤解决：

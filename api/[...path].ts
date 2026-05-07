@@ -16,7 +16,11 @@ export default async function handler(request: Request): Promise<Response> {
   }
 
   const url = new URL(request.url);
-  const targetPath = url.pathname;
+  let targetPath = url.pathname;
+  // Vercel rewrite: /v1/* -> /api/*; map back for upstream
+  if (targetPath.startsWith('/api/')) {
+    targetPath = '/v1' + targetPath.slice(4);
+  }
   const targetUrl = `https://api.kimi.com/coding${targetPath}${url.search}`;
 
   // 复制请求头

@@ -52,7 +52,7 @@ fi
 if ! git remote get-url origin &> /dev/null; then
     echo ""
     echo "⚠️  请先将代码推送到 GitHub："
-    echo "   git remote add origin https://github.com/你的用户名/kimi-api-proxy.git"
+    echo "   git remote add origin https://github.com/你的用户名/meridian.git"
     echo "   git push -u origin main"
     echo ""
     echo "完成后重新运行 ./deploy.sh"

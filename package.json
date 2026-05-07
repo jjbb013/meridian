@@ -1,5 +1,5 @@
 {
-  "name": "kimi-api-proxy",
+  "name": "meridian",
   "version": "1.0.0",
   "description": "Kimi API 中转代理 — Vercel 一键部署",
   "scripts": {

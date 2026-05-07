@@ -15,7 +15,7 @@
 | 文件 | 职责 |
 |------|------|
 | `api/v1/[[...path]].ts` | 核心代理逻辑。捕获 `/v1/*` 所有路径，转发到 Kimi API，自动注入 `Authorization`，添加 CORS |
-| `api/health.ts` | 健康检查端点，返回 `{ status: 'ok', service: 'kimi-api-proxy' }` |
+| `api/health.ts` | 健康检查端点，返回 `{ status: 'ok', service: 'meridian' }` |
 | `vercel.json` | 路由重写（`/health` → `/api/health`）和自定义响应头 |
 | `deploy.sh` | 一键部署脚本，处理 Vercel CLI 安装、登录、环境变量注入、Git 推送和部署 |
 

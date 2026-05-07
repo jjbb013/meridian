@@ -2,7 +2,7 @@
 
 Kimi API 中转代理，基于 Vercel Edge Function 构建。只需提供 Kimi API Key，一键部署，即可通过你自己的域名调用 Kimi API。
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjjbb013%2Fkimi-api-proxy&env=KIMI_API_KEY&project-name=kimi-api-proxy&repository-name=kimi-api-proxy)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjjbb013%2Fmeridian&env=KIMI_API_KEY&project-name=meridian&repository-name=meridian)
 
 ## 特性
 
@@ -62,8 +62,8 @@ curl https://<你的域名>/v1/models \
 ### 1. 克隆仓库
 
 ```bash
-git clone https://github.com/jjbb013/kimi-api-proxy.git
-cd kimi-api-proxy
+git clone https://github.com/jjbb013/meridian.git
+cd meridian
 ```
 
 ### 2. 运行部署脚本
@@ -127,7 +127,7 @@ curl https://<你的域名>/v1/chat/completions \
 ## 项目结构
 
 ```
-kimi-api-proxy/
+meridian/
 ├── api/
 │   ├── v1/
 │   │   └── [[...path]].ts    # 主代理路由，透传所有 /v1/* 请求

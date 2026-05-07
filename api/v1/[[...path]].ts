@@ -22,6 +22,7 @@ export default async function handler(request: Request): Promise<Response> {
   // 复制请求头
   const headers = new Headers(request.headers);
   headers.set('Host', 'api.kimi.com');
+  headers.set('User-Agent', 'claude-code/1.0');
 
   // 如果请求没带 Authorization，自动注入环境变量中的 Key
   if (!headers.has('Authorization')) {

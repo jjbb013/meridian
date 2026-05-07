@@ -1,22 +1,14 @@
 {
   "rewrites": [
-    {
-      "source": "/health",
-      "destination": "/api/health"
-    },
-    {
-      "source": "/v1/:path*",
-      "destination": "/api/:path*"
-    }
+    { "source": "/health", "destination": "/api/health" },
+    { "source": "/v1/chat/completions", "destination": "/api/v1/chat/completions" },
+    { "source": "/v1/models", "destination": "/api/v1/models" }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        {
-          "key": "X-Proxy-Service",
-          "value": "meridian"
-        }
+        { "key": "X-Proxy-Service", "value": "meridian" }
       ]
     }
   ]

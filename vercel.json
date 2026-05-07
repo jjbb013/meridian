@@ -3,6 +3,10 @@
     {
       "source": "/health",
       "destination": "/api/health"
+    },
+    {
+      "source": "/v1/:path*",
+      "destination": "/api/v1/:path*"
     }
   ],
   "headers": [

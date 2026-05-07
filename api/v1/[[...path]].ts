@@ -17,11 +17,11 @@ export default async function handler(request: Request): Promise<Response> {
 
   const url = new URL(request.url);
   const targetPath = url.pathname;
-  const targetUrl = `https://api.moonshot.cn${targetPath}${url.search}`;
+  const targetUrl = `https://api.kimi.com/coding${targetPath}${url.search}`;
 
   // 复制请求头
   const headers = new Headers(request.headers);
-  headers.set('Host', 'api.moonshot.cn');
+  headers.set('Host', 'api.kimi.com');
 
   // 如果请求没带 Authorization，自动注入环境变量中的 Key
   if (!headers.has('Authorization')) {

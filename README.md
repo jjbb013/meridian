@@ -2,7 +2,7 @@
 
 Kimi API 中转代理，基于 Vercel Edge Function 构建。只需提供 Kimi API Key，一键部署，即可通过你自己的域名调用 Kimi API。
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjjbb013%2Fmeridian&env=KIMI_API_KEY&project-name=meridian&repository-name=meridian)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjjbb013%2Fmeridian&env=KIMI_API_KEY&env-description=Kimi%20API%20Key%20from%20https%3A%2F%2Fplatform.moonshot.cn&project-name=meridian&repository-name=meridian)
 
 ## 特性
 
@@ -34,6 +34,17 @@ Kimi API 中转代理，基于 Vercel Edge Function 构建。只需提供 Kimi A
 4. 点击 **Deploy**
 
 等待约 30 秒，即可获得你的专属代理地址。
+
+### 点击按钮后遇到 404？
+
+如果点击 Deploy Button 后页面显示 `404: NOT_FOUND`，通常是 **Vercel 与 GitHub 的连接状态** 问题，按以下步骤解决：
+
+1. **确保已登录 Vercel**：访问 https://vercel.com/login 用 GitHub 账号登录
+2. **重新授权 GitHub**：访问 https://vercel.com/settings/git → 点击 GitHub 右侧的 **「Disconnect」** → 然后 **「Connect」** 重新授权
+3. **刷新页面重试**：授权完成后，重新点击 Deploy Button
+4. **如果仍有问题**：改用下方的「本地脚本部署」方式，同样是一键完成
+
+> 这是 Vercel 的已知偶发问题，与项目代码无关。CLI 脚本部署不受此影响。
 
 ### 验证部署
 

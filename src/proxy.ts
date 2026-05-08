@@ -63,6 +63,11 @@ export async function handleProxy(
     method: request.method,
     headers,
     body: request.body,
+    // @ts-ignore - Cloudflare Workers specific
+    cf: {
+      cacheTtl: 0,
+      cacheEverything: false,
+    },
   });
 
   const responseHeaders = new Headers(response.headers);

@@ -1,32 +1,81 @@
-# Kimi API Proxy
+# Meridian — Kimi API 中转代理
 
-Kimi API 中转代理，支持 **Vercel Edge Function** 和 **Cloudflare Workers** 双平台部署。只需提供 Kimi API Key，一键部署，即可通过你自己的域名调用 Kimi API。
+支持 **OpenAI** 和 **Anthropic** 双协议格式的 Kimi API 中转代理。提供 Web UI 管理后台、多 Key 轮询、客户端 Token 认证、请求日志和统计监控。
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjjbb013%2Fmeridian&env=KIMI_API_KEY&env-description=Kimi%20API%20Key%20from%20https%3A%2F%2Fplatform.moonshot.cn&project-name=meridian&repository-name=meridian)
-
-## 特性
-
-- ⚡ **Vercel Edge Function** — 全球边缘节点加速
-- 🔑 **自动注入 API Key** — 未携带 Authorization 时自动使用环境变量中的 Key
-- 🌐 **完整 CORS 支持** — 开箱即用，支持浏览器端直接调用
-- 🚀 **一键部署** — 点击按钮或运行脚本，无需手动配置 Dashboard
-- 📡 **流式 SSE 支持** — 完整支持 Kimi 流式响应
-
-## 前置条件
-
-| 条件 | 获取方式 |
-|------|---------|
-| Kimi API Key | https://platform.moonshot.cn |
-
-> 任选下方一种部署方式即可。
+| 部署平台 | 推荐度 | 特性 |
+|---------|-------|------|
+| **Northflank** | ⭐ 推荐 | Docker + SQLite，完整管理后台，多 Key 轮询 |
+| **Vercel** | 可用 | Edge Function，轻量，无状态 |
 
 ---
 
-## 部署方式一：Vercel（推荐 ⭐）
+## 特性
 
-### 方式 1a：点击 Deploy Button
+- 🤖 **双协议兼容** — 同时支持 OpenAI (`/v1/chat/completions`) 和 Anthropic (`/v1/messages`) API 格式
+- 🖥️ **Web 管理后台** — 可视化配置 API Keys、查看日志、统计监控（Northflank 版）
+- 🔑 **多 Key 轮询** — 支持权重配置，自动负载均衡，失败自动降级
+- 🔐 **客户端 Token 认证** — 可选的访问控制，支持 Bearer Token 和 X-Api-Key
+- 📊 **实时监控** — 请求数、成功率、平均延迟、Key 状态
+- 📝 **请求日志** — 记录每次请求的详情，方便排查问题
+- 🌐 **完整 CORS 支持** — 开箱即用，支持浏览器端直接调用
+- 📡 **流式 SSE 支持** — 完整支持流式响应（两种协议）
+- 🐳 **Docker 部署** — 零 Volume，纯环境变量配置
 
-无需本地安装任何工具，点击上方 **「Deploy with Vercel」** 按钮：
+---
+
+## 部署方式一：Northflank（推荐 ⭐）
+
+适合需要**多 Key 轮询、请求日志、统计监控、Web 管理**的用户。
+
+### 部署步骤
+
+1. 在 Northflank Dashboard 创建新项目
+2. 选择 **Create Service** → **Combined service**
+3. 选择 Git 提供商，连接本仓库
+4. 构建方式选择 **Dockerfile**，Dockerfile 路径填 `./Dockerfile.northflank`
+5. 在 **Environment variables** 中添加（见下方）
+6. 点击 **Create Service**
+
+### 环境变量
+
+| 变量名 | 必填 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `API_KEYS` | **是** | `[]` | Kimi API Keys，JSON 数组格式，如 `["sk-xxx","sk-yyy"]` |
+| `ADMIN_PASSWORD` | 否 | `admin` | 管理后台密码 |
+| `ALLOWED_TOKENS` | 否 | — | 客户端访问令牌，JSON 数组格式。设置后客户端必须携带匹配的 Token |
+| `DATABASE_TYPE` | 否 | `sqlite` | 数据库类型 |
+| `SQLITE_DATABASE` | 否 | `:memory:` | SQLite 数据库。填 `:memory:` 使用内存模式（重启丢失数据），或填文件名持久化 |
+| `USER_AGENT` | 否 | `claude-code/1.0` | 请求上游时使用的 User-Agent |
+| `PORT` | 否 | `3000` | 服务端口 |
+
+### 最小配置示例
+
+```
+API_KEYS=["sk-your-kimi-key-1"]
+ADMIN_PASSWORD=your-admin-password
+```
+
+### 带客户端认证的示例
+
+```
+API_KEYS=["sk-your-kimi-key-1","sk-your-kimi-key-2"]
+ADMIN_PASSWORD=your-admin-password
+ALLOWED_TOKENS=["sk-willpan","sk-friend-1"]
+```
+
+详细说明见 [`northflank/README.md`](northflank/README.md)。
+
+---
+
+## 部署方式二：Vercel
+
+适合轻量、无状态、快速部署的场景。
+
+### 点击 Deploy Button
+
+无需本地安装任何工具：
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjjbb013%2Fmeridian&env=KIMI_API_KEY&env-description=Kimi%20API%20Key%20from%20https%3A%2F%2Fplatform.moonshot.cn&project-name=meridian&repository-name=meridian)
 
 1. 跳转 Vercel 页面，选择你的 GitHub 账号
 2. 填写 **Project Name**（项目名称）
@@ -38,7 +87,7 @@ Kimi API 中转代理，支持 **Vercel Edge Function** 和 **Cloudflare Workers
 
 > ⚠️ **注意仓库可见性**：Vercel 的 Deploy Button 默认可能将你的 GitHub 仓库创建为 **Private（私有）**。如果你希望仓库是公开的，部署完成后可以前往 GitHub → 该仓库 → Settings → Danger Zone → **Change repository visibility** → 改为 Public。
 
-### 方式 1b：本地脚本部署
+### 本地脚本部署
 
 ```bash
 git clone https://github.com/jjbb013/meridian.git
@@ -47,82 +96,38 @@ chmod +x deploy.sh
 ./deploy.sh
 ```
 
-脚本会自动完成以下操作：
-- 检查并安装 Vercel CLI
-- 引导 Vercel 登录（如未登录）
-- 交互式输入 Kimi API Key
-- 推送代码到 GitHub
-- 部署到 Vercel 并设置环境变量
-
 ---
 
----
+## API 端点
 
-## 部署方式三：Northflank（带 Web UI 管理后台）
+### 双协议支持
 
-适合需要**多 Key 轮询、请求日志、统计监控**等高级功能的用户。
+| 协议 | 端点 | 认证方式 |
+|------|------|---------|
+| **OpenAI** | `POST /v1/chat/completions` | `Authorization: Bearer <token>` |
+| **OpenAI** | `GET /v1/models` | `Authorization: Bearer <token>` |
+| **Anthropic** | `POST /v1/messages` | `X-Api-Key: <token>` 或 `Authorization: Bearer <token>` |
+| **Anthropic** | `GET /v1/models` | `X-Api-Key: <token>` 或 `Authorization: Bearer <token>` |
 
-### 特性
+> `/v1/models` 会根据请求头智能判断协议：带 `X-Api-Key` 或 `Anthropic-Version` 时返回 Anthropic 格式，否则返回 OpenAI 格式。
 
-- 🖥️ **Web 管理后台** — 可视化配置 API Keys、查看日志和统计
-- 🔑 **多 Key 轮询** — 支持权重配置，自动负载均衡
-- 📊 **实时监控** — 请求数、成功率、平均延迟、Key 状态
-- 📝 **请求日志** — 记录每次请求的详情，方便排查问题
+### 管理端点（Northflank 版）
 
-### 部署步骤
-
-1. 在 Northflank Dashboard 创建新项目
-2. 选择 **Create Service** → **Combined service**
-3. 选择 Git 提供商，连接本仓库
-4. 构建方式选择 **Dockerfile**，Dockerfile 路径填 `./northflank/Dockerfile`
-5. 在 **Environment variables** 中添加：
-   - `ADMIN_PASSWORD` = 你的管理后台密码（默认 `admin`）
-6. 在 **Volumes** 中添加持久化卷：
-   - 挂载路径：`/data`（用于保存 SQLite 数据库）
-7. 点击 **Create Service**
-
-部署完成后，访问你的服务地址即可进入管理后台。
-
-详细说明见 [`northflank/README.md`](northflank/README.md)。
-
----
-
-## ⚠️ Cloudflare Workers 支持（实验性）
-
-本项目包含 Cloudflare Workers 的代码和配置，但由于 **Kimi API (`api.kimi.com`) 本身也使用 Cloudflare 保护**，其 Bot Management 策略会拦截来自 Cloudflare Workers 数据中心 IP 的请求，导致 `/v1/*` 端点返回 403 验证页面。
-
-**因此，目前推荐仅使用 Vercel 或 Northflank 部署。** 如果你仍想尝试 Cloudflare Workers：
-
-```bash
-npm install
-npx wrangler login
-npx wrangler secret put KIMI_API_KEY
-npx wrangler deploy
-```
-
----
-
-## 验证部署
-
-```bash
-# 健康检查
-curl https://<你的域名>/health
-
-# 获取模型列表
-curl https://<你的域名>/v1/models \
-  -H "Authorization: Bearer your_kimi_api_key"
-```
+| 端点 | 说明 |
+|------|------|
+| `GET /health` | 健康检查 |
+| `GET /admin/stats` | 统计数据 |
+| `GET /admin/keys` | API Key 列表 |
+| `POST /admin/keys` | 添加 Key |
+| `DELETE /admin/keys/:id` | 删除 Key |
+| `PATCH /admin/keys/:id` | 启用/禁用/更新 Key |
+| `GET /admin/logs` | 请求日志 |
+| `GET /admin/settings` | 系统设置 |
+| `POST /admin/settings` | 更新设置 |
 
 ---
 
 ## 客户端配置
-
-### Kimi Code / Kimi CLI
-
-```bash
-export KIMI_BASE_URL=https://<你的域名>
-export KIMI_API_KEY=your_kimi_api_key
-```
 
 ### OpenAI SDK
 
@@ -130,8 +135,8 @@ export KIMI_API_KEY=your_kimi_api_key
 from openai import OpenAI
 
 client = OpenAI(
-    api_key="your_kimi_api_key",
-    base_url="https://<你的域名>/v1"
+    api_key="your-client-token",
+    base_url="https://<your-domain>/v1"
 )
 
 response = client.chat.completions.create(
@@ -141,26 +146,90 @@ response = client.chat.completions.create(
 print(response.choices[0].message.content)
 ```
 
-### cURL
+### Anthropic SDK
 
-```bash
-curl https://<你的域名>/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your_kimi_api_key" \
-  -d '{
-    "model": "kimi-for-coding",
-    "messages": [{"role": "user", "content": "你好"}]
-  }'
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="your-client-token",
+    base_url="https://<your-domain>"
+)
+
+response = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "你好"}]
+)
+print(response.content[0].text)
 ```
 
-### Cline / OpenCode 等 IDE 插件
+> 所有 Claude 模型名会自动映射到 `kimi-for-coding`。
+
+### Cline / OpenCode / 其他 IDE 插件
+
+**OpenAI 模式：**
 
 | 设置项 | 值 |
 |--------|-----|
 | API Provider | `OpenAI Compatible` |
-| Base URL | `https://<你的域名>/v1` |
-| API Key | 你的 Kimi API Key |
+| Base URL | `https://<your-domain>/v1` |
+| API Key | 你的客户端 Token |
 | Model ID | `kimi-for-coding` |
+
+**Anthropic 模式：**
+
+| 设置项 | 值 |
+|--------|-----|
+| API Provider | `Anthropic` |
+| Base URL | `https://<your-domain>` |
+| API Key | 你的客户端 Token |
+| Model ID | `claude-3-5-sonnet-20241022` |
+
+### cURL
+
+```bash
+# OpenAI 协议
+curl https://<your-domain>/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-client-token" \
+  -d '{"model":"kimi-for-coding","messages":[{"role":"user","content":"hello"}]}'
+
+# Anthropic 协议
+curl https://<your-domain>/v1/messages \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: your-client-token" \
+  -H "Anthropic-Version: 2023-06-01" \
+  -d '{"model":"claude-3-5-sonnet-20241022","max_tokens":1024,"messages":[{"role":"user","content":"hello"}]}'
+```
+
+---
+
+## 安全模型
+
+- **客户端的 `Authorization` / `X-Api-Key` 仅用于认证谁有权访问代理**
+- **请求 Kimi 上游时，代理永远使用 `API_KEYS` 环境变量中的 Key**
+- 如果设置了 `ALLOWED_TOKENS`，客户端必须提供其中之一
+- 如果没设置 `ALLOWED_TOKENS`，客户端必须提供 `ADMIN_PASSWORD`
+- 无效 Key（如 `noop`、长度<8）会被拒绝
+
+---
+
+## 验证部署
+
+```bash
+# 健康检查
+curl https://<your-domain>/health
+
+# OpenAI 模型列表
+curl https://<your-domain>/v1/models \
+  -H "Authorization: Bearer your-client-token"
+
+# Anthropic 模型列表
+curl https://<your-domain>/v1/models \
+  -H "X-Api-Key: your-client-token" \
+  -H "Anthropic-Version: 2023-06-01"
+```
 
 ---
 
@@ -174,61 +243,36 @@ meridian/
 │   │   │   └── completions.ts
 │   │   └── models.ts
 │   └── health.ts
-├── src/                         # 共享代理逻辑
-│   └── proxy.ts
-├── northflank/                  # Northflank 部署版（Docker + Web UI）
+├── northflank/                  # Northflank 部署版（Docker + Express + SQLite）
 │   ├── src/
 │   │   ├── server.ts            # Express 入口
 │   │   ├── db.ts                # SQLite 数据库
 │   │   ├── keyManager.ts        # API Key 轮询管理
-│   │   ├── proxy.ts             # 上游代理逻辑
+│   │   ├── proxy.ts             # OpenAI 协议代理
+│   │   ├── anthropic.ts         # Anthropic 协议转换
 │   │   └── middleware.ts        # 认证和 CORS
 │   ├── public/
-│   │   └── index.html           # 管理后台页面
-│   ├── Dockerfile
+│   │   └── index.html           # Web 管理后台
+│   ├── Dockerfile.northflank
 │   ├── package.json
 │   └── tsconfig.json
+├── src/                         # 共享代理逻辑（Vercel 用）
+│   └── proxy.ts
 ├── vercel.json                  # Vercel 路由配置
-├── package.json                 # 依赖与脚本
-├── tsconfig.json                # TypeScript 配置
-├── .env.example                 # 环境变量模板
+├── package.json
+├── tsconfig.json
+├── .env.example
 ├── deploy.sh                    # Vercel 一键部署脚本
 └── README.md                    # 本文档
 ```
 
 ---
 
-## 环境变量
+## ⚠️ Cloudflare Workers
 
-| 变量名 | 必填 | 说明 |
-|--------|------|------|
-| `KIMI_API_KEY` | 是 | Kimi API Key，用于自动注入 Authorization |
+本项目包含 Cloudflare Workers 的代码，但由于 **Kimi API (`api.kimi.com`) 本身也使用 Cloudflare 保护**，其 Bot Management 策略会拦截来自 Cloudflare Workers 数据中心 IP 的请求，导致返回 403。
 
----
-
-## 平台限制
-
-Vercel 免费版有 [使用限制](https://vercel.com/docs/concepts/limits/overview)，高并发场景请升级套餐。
-
----
-
-## 手动部署
-
-如果你不想使用 `deploy.sh`，也可以手动操作：
-
-```bash
-# 安装依赖
-npm install
-
-# 登录 Vercel
-npx vercel login
-
-# 设置环境变量
-npx vercel env add KIMI_API_KEY
-
-# 部署
-npx vercel --prod
-```
+**因此，目前推荐仅使用 Northflank 或 Vercel 部署。**
 
 ---
 

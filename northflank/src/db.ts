@@ -59,4 +59,9 @@ for (const [k, v] of Object.entries(defaults)) {
   db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`).run(k, v);
 }
 
+// Override admin_password from environment variable if set
+if (process.env.ADMIN_PASSWORD) {
+  db.prepare(`INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))`).run('admin_password', process.env.ADMIN_PASSWORD);
+}
+
 export default db;

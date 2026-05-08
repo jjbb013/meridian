@@ -28,15 +28,8 @@ export async function handleProxy(req: Request, res: Response): Promise<void> {
   headers.set('Host', 'api.kimi.com');
   headers.set('User-Agent', userAgent);
 
-  // Authorization: use client's key if it looks valid, otherwise use our pool key
-  const clientAuth = req.headers.authorization as string | undefined;
-  const clientKey = clientAuth?.replace(/^Bearer\s+/i, '').trim();
-  const looksValid = clientKey && clientKey.length > 10 && !clientKey.toLowerCase().includes('noop');
-  if (looksValid && clientAuth) {
-    headers.set('Authorization', clientAuth);
-  } else {
-    headers.set('Authorization', `Bearer ${keyRecord.key}`);
-  }
+  // Always use the pool key to call upstream — client auth is only for accessing the proxy
+  headers.set('Authorization', `Bearer ${keyRecord.key}`);
 
   const start = Date.now();
   let success = false;

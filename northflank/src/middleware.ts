@@ -13,25 +13,35 @@ export function adminAuth(req: Request, res: Response, next: NextFunction): void
 }
 
 export function clientAuth(req: Request, res: Response, next: NextFunction): void {
+  const clientToken = req.headers.authorization?.replace('Bearer ', '').trim();
+  if (!clientToken) {
+    res.status(403).json({ error: 'Missing Authorization header' });
+    return;
+  }
+
   const allowedTokensEnv = process.env.ALLOWED_TOKENS;
-  if (!allowedTokensEnv) {
-    next();
-    return;
+  if (allowedTokensEnv) {
+    // ALLOWED_TOKENS is set: client must provide a token in the list
+    let allowedTokens: string[];
+    try {
+      allowedTokens = JSON.parse(allowedTokensEnv);
+    } catch {
+      res.status(500).json({ error: 'Invalid ALLOWED_TOKENS configuration' });
+      return;
+    }
+    if (!allowedTokens.includes(clientToken)) {
+      res.status(403).json({ error: 'Invalid token' });
+      return;
+    }
+  } else {
+    // ALLOWED_TOKENS is not set: client must provide the admin password
+    const adminPassword = getSetting('admin_password') || 'admin';
+    if (clientToken !== adminPassword) {
+      res.status(403).json({ error: 'Invalid credentials' });
+      return;
+    }
   }
 
-  let allowedTokens: string[];
-  try {
-    allowedTokens = JSON.parse(allowedTokensEnv);
-  } catch {
-    res.status(500).json({ error: 'Invalid ALLOWED_TOKENS configuration' });
-    return;
-  }
-
-  const clientToken = req.headers.authorization?.replace('Bearer ', '');
-  if (!clientToken || !allowedTokens.includes(clientToken)) {
-    res.status(403).json({ error: 'Invalid or missing token' });
-    return;
-  }
   next();
 }
 

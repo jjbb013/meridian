@@ -46,7 +46,7 @@ export function recordUsage(keyId: number, success: boolean, statusCode?: number
   if (!success) {
     db.prepare('UPDATE api_keys SET failure_count = failure_count + 1 WHERE id = ?').run(keyId);
   } else {
-    db.prepare('UPDATE api_keys SET failure_count = 0, last_used_at = datetime("now") WHERE id = ?').run(keyId);
+    db.prepare("UPDATE api_keys SET failure_count = 0, last_used_at = datetime('now') WHERE id = ?").run(keyId);
   }
   rebuildWeightedKeys();
 }
@@ -105,5 +105,5 @@ export function getSetting(key: string): string | undefined {
 }
 
 export function setSetting(key: string, value: string): void {
-  db.prepare('INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, datetime("now"))').run(key, value);
+  db.prepare("INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))").run(key, value);
 }

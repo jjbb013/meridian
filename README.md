@@ -56,11 +56,42 @@ chmod +x deploy.sh
 
 ---
 
+---
+
+## 部署方式三：Northflank（带 Web UI 管理后台）
+
+适合需要**多 Key 轮询、请求日志、统计监控**等高级功能的用户。
+
+### 特性
+
+- 🖥️ **Web 管理后台** — 可视化配置 API Keys、查看日志和统计
+- 🔑 **多 Key 轮询** — 支持权重配置，自动负载均衡
+- 📊 **实时监控** — 请求数、成功率、平均延迟、Key 状态
+- 📝 **请求日志** — 记录每次请求的详情，方便排查问题
+
+### 部署步骤
+
+1. 在 Northflank Dashboard 创建新项目
+2. 选择 **Create Service** → **Combined service**
+3. 选择 Git 提供商，连接本仓库
+4. 构建方式选择 **Dockerfile**，Dockerfile 路径填 `./northflank/Dockerfile`
+5. 在 **Environment variables** 中添加：
+   - `ADMIN_PASSWORD` = 你的管理后台密码（默认 `admin`）
+6. 在 **Volumes** 中添加持久化卷：
+   - 挂载路径：`/data`（用于保存 SQLite 数据库）
+7. 点击 **Create Service**
+
+部署完成后，访问你的服务地址即可进入管理后台。
+
+详细说明见 [`northflank/README.md`](northflank/README.md)。
+
+---
+
 ## ⚠️ Cloudflare Workers 支持（实验性）
 
 本项目包含 Cloudflare Workers 的代码和配置，但由于 **Kimi API (`api.kimi.com`) 本身也使用 Cloudflare 保护**，其 Bot Management 策略会拦截来自 Cloudflare Workers 数据中心 IP 的请求，导致 `/v1/*` 端点返回 403 验证页面。
 
-**因此，目前推荐仅使用 Vercel 部署。** 如果你仍想尝试 Cloudflare Workers：
+**因此，目前推荐仅使用 Vercel 或 Northflank 部署。** 如果你仍想尝试 Cloudflare Workers：
 
 ```bash
 npm install
@@ -137,19 +168,31 @@ curl https://<你的域名>/v1/chat/completions \
 
 ```
 meridian/
-├── api/
+├── api/                         # Vercel Edge Functions
 │   ├── v1/
 │   │   ├── chat/
-│   │   │   └── completions.ts   # /v1/chat/completions
-│   │   └── models.ts            # /v1/models
-│   └── health.ts                # /health
-├── src/
-│   └── proxy.ts                 # 共享代理逻辑
+│   │   │   └── completions.ts
+│   │   └── models.ts
+│   └── health.ts
+├── src/                         # 共享代理逻辑
+│   └── proxy.ts
+├── northflank/                  # Northflank 部署版（Docker + Web UI）
+│   ├── src/
+│   │   ├── server.ts            # Express 入口
+│   │   ├── db.ts                # SQLite 数据库
+│   │   ├── keyManager.ts        # API Key 轮询管理
+│   │   ├── proxy.ts             # 上游代理逻辑
+│   │   └── middleware.ts        # 认证和 CORS
+│   ├── public/
+│   │   └── index.html           # 管理后台页面
+│   ├── Dockerfile
+│   ├── package.json
+│   └── tsconfig.json
 ├── vercel.json                  # Vercel 路由配置
 ├── package.json                 # 依赖与脚本
 ├── tsconfig.json                # TypeScript 配置
 ├── .env.example                 # 环境变量模板
-├── deploy.sh                    # 一键部署脚本
+├── deploy.sh                    # Vercel 一键部署脚本
 └── README.md                    # 本文档
 ```
 

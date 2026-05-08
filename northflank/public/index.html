@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meridian — Kimi API 中转管理</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: { 50: '#f0f9ff', 100: '#e0f2fe', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1' },
+            success: { 50: '#f0fdf4', 500: '#22c55e', 600: '#16a34a' },
+            danger: { 50: '#fef2f2', 500: '#ef4444', 600: '#dc2626' },
+            warning: { 50: '#fffbeb', 500: '#f59e0b', 600: '#d97706' },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .tab-active { border-bottom: 2px solid #0ea5e9; color: #0284c7; }
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div id="app">
+    <!-- Login -->
+    <div id="login-page" class="flex items-center justify-center min-h-screen">
+      <div class="bg-white rounded-xl shadow-lg p-8 w-full max-w-sm">
+        <div class="text-center mb-6">
+          <div class="w-12 h-12 bg-primary-500 rounded-lg mx-auto mb-3 flex items-center justify-center">
+            <i class="fas fa-satellite-dish text-white text-xl"></i>
+          </div>
+          <h1 class="text-xl font-bold text-gray-800">Meridian</h1>
+          <p class="text-sm text-gray-500 mt-1">Kimi API 中转管理</p>
+        </div>
+        <div class="space-y-4">
+          <input id="password" type="password" placeholder="管理密码" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+          <button onclick="doLogin()" class="w-full bg-primary-600 hover:bg-primary-700 text-white py-2 rounded-lg font-medium transition">登录</button>
+        </div>
+        <p id="login-error" class="text-danger-500 text-sm mt-3 text-center hidden">密码错误</p>
+      </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="hidden">
+      <!-- Header -->
+      <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex justify-between h-14">
+            <div class="flex items-center">
+              <div class="w-8 h-8 bg-primary-500 rounded-md flex items-center justify-center mr-3">
+                <i class="fas fa-satellite-dish text-white text-sm"></i>
+              </div>
+              <span class="font-bold text-gray-800">Meridian</span>
+            </div>
+            <div class="flex items-center space-x-4">
+              <span class="text-xs text-gray-400" id="api-url"></span>
+              <button onclick="logout()" class="text-gray-500 hover:text-gray-700 text-sm"><i class="fas fa-sign-out-alt mr-1"></i>退出</button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Tabs -->
+      <div class="bg-white border-b">
+        <div class="max-w-7xl mx-auto px-4">
+          <div class="flex space-x-6">
+            <button onclick="switchTab('overview')" id="tab-overview" class="tab-active py-3 text-sm font-medium text-gray-600 hover:text-gray-800">概览</button>
+            <button onclick="switchTab('keys')" id="tab-keys" class="py-3 text-sm font-medium text-gray-600 hover:text-gray-800">API Keys</button>
+            <button onclick="switchTab('logs')" id="tab-logs" class="py-3 text-sm font-medium text-gray-600 hover:text-gray-800">日志</button>
+            <button onclick="switchTab('settings')" id="tab-settings" class="py-3 text-sm font-medium text-gray-600 hover:text-gray-800">设置</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Overview -->
+        <div id="panel-overview" class="fade-in">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-xl shadow-sm p-5 border">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500">总请求数</p>
+                  <p class="text-2xl font-bold text-gray-800" id="stat-total">-</p>
+                </div>
+                <div class="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-chart-line text-primary-500"></i>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-5 border">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500">成功率</p>
+                  <p class="text-2xl font-bold text-success-600" id="stat-rate">-</p>
+                </div>
+                <div class="w-10 h-10 bg-success-50 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-check-circle text-success-500"></i>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-5 border">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500">平均延迟</p>
+                  <p class="text-2xl font-bold text-gray-800" id="stat-latency">-</p>
+                </div>
+                <div class="w-10 h-10 bg-warning-50 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-bolt text-warning-500"></i>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-5 border">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500">API Keys</p>
+                  <p class="text-2xl font-bold text-gray-800" id="stat-keys">-</p>
+                </div>
+                <div class="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-key text-primary-500"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm border p-6">
+            <h3 class="font-bold text-gray-800 mb-4">客户端配置</h3>
+            <div class="bg-gray-50 rounded-lg p-4 font-mono text-sm text-gray-700 space-y-1">
+              <p>Base URL: <span id="client-url" class="text-primary-600"></span></p>
+              <p>Model: <span class="text-primary-600">kimi-for-coding</span></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Keys -->
+        <div id="panel-keys" class="hidden fade-in">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold text-gray-800">API Keys</h2>
+            <button onclick="showAddKey()" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+              <i class="fas fa-plus mr-1"></i>添加 Key
+            </button>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 border-b">
+                <tr>
+                  <th class="text-left px-4 py-3 font-medium text-gray-600">名称</th>
+                  <th class="text-left px-4 py-3 font-medium text-gray-600">Key</th>
+                  <th class="text-left px-4 py-3 font-medium text-gray-600">权重</th>
+                  <th class="text-left px-4 py-3 font-medium text-gray-600">失败次数</th>
+                  <th class="text-left px-4 py-3 font-medium text-gray-600">状态</th>
+                  <th class="text-right px-4 py-3 font-medium text-gray-600">操作</th>
+                </tr>
+              </thead>
+              <tbody id="keys-list"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Add Key Modal -->
+        <div id="modal-add-key" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">添加 API Key</h3>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">API Key</label>
+                <input id="new-key-value" type="text" placeholder="sk-..." class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">名称（可选）</label>
+                <input id="new-key-name" type="text" placeholder="例如：主账号" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">权重</label>
+                <input id="new-key-weight" type="number" value="1" min="1" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+              </div>
+            </div>
+            <div class="flex justify-end space-x-3 mt-6">
+              <button onclick="hideAddKey()" class="px-4 py-2 text-gray-600 hover:text-gray-800">取消</button>
+              <button onclick="submitAddKey()" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg">添加</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Logs -->
+        <div id="panel-logs" class="hidden fade-in">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold text-gray-800">请求日志</h2>
+            <button onclick="loadLogs()" class="text-primary-600 hover:text-primary-700 text-sm"><i class="fas fa-sync-alt mr-1"></i>刷新</button>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 border-b">
+                <tr>
+                  <th class="text-left px-4 py-3 font-medium text-gray-600">时间</th>
+                  <th class="text-left px-4 py-3 font-medium text-gray-600">模型</th>
+                  <th class="text-left px-4 py-3 font-medium text-gray-600">Key</th>
+                  <th class="text-left px-4 py-3 font-medium text-gray-600">状态</th>
+                  <th class="text-left px-4 py-3 font-medium text-gray-600">状态码</th>
+                  <th class="text-right px-4 py-3 font-medium text-gray-600">延迟</th>
+                </tr>
+              </thead>
+              <tbody id="logs-list"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Settings -->
+        <div id="panel-settings" class="hidden fade-in">
+          <div class="max-w-2xl">
+            <h2 class="text-lg font-bold text-gray-800 mb-4">系统设置</h2>
+            <div class="bg-white rounded-xl shadow-sm border p-6 space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">User-Agent</label>
+                <input id="setting-ua" type="text" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <p class="text-xs text-gray-400 mt-1">发送给上游 API 的 User-Agent</p>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">管理密码</label>
+                <input id="setting-pwd" type="password" placeholder="不修改请留空" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+              </div>
+              <button onclick="saveSettings()" class="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg font-medium transition">保存</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('meridian_token');
+    const baseUrl = window.location.origin;
+
+    if (token) {
+      document.getElementById('login-page').classList.add('hidden');
+      document.getElementById('dashboard').classList.remove('hidden');
+      document.getElementById('api-url').textContent = baseUrl;
+      document.getElementById('client-url').textContent = baseUrl + '/v1';
+      loadStats();
+      loadKeys();
+    }
+
+    async function api(path, opts = {}) {
+      const res = await fetch(baseUrl + path, {
+        ...opts,
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json',
+          ...(opts.headers || {})
+        }
+      });
+      if (res.status === 401) {
+        logout();
+        return null;
+      }
+      return res.json();
+    }
+
+    function doLogin() {
+      const pwd = document.getElementById('password').value;
+      localStorage.setItem('meridian_token', pwd);
+      location.reload();
+    }
+
+    function logout() {
+      localStorage.removeItem('meridian_token');
+      location.reload();
+    }
+
+    function switchTab(name) {
+      ['overview', 'keys', 'logs', 'settings'].forEach(t => {
+        document.getElementById('panel-' + t).classList.add('hidden');
+        document.getElementById('tab-' + t).classList.remove('tab-active');
+      });
+      document.getElementById('panel-' + name).classList.remove('hidden');
+      document.getElementById('tab-' + name).classList.add('tab-active');
+      if (name === 'logs') loadLogs();
+      if (name === 'settings') loadSettings();
+    }
+
+    async function loadStats() {
+      const data = await api('/admin/stats');
+      if (!data) return;
+      document.getElementById('stat-total').textContent = data.total_requests.toLocaleString();
+      document.getElementById('stat-rate').textContent = data.success_rate + '%';
+      document.getElementById('stat-latency').textContent = data.avg_latency + 'ms';
+      document.getElementById('stat-keys').textContent = data.key_count;
+    }
+
+    async function loadKeys() {
+      const keys = await api('/admin/keys');
+      if (!keys) return;
+      const tbody = document.getElementById('keys-list');
+      tbody.innerHTML = keys.map(k => `
+        <tr class="border-b hover:bg-gray-50">
+          <td class="px-4 py-3">${k.name || '-'}</td>
+          <td class="px-4 py-3 font-mono text-xs">${k.key}</td>
+          <td class="px-4 py-3">${k.weight}</td>
+          <td class="px-4 py-3">${k.failure_count}</td>
+          <td class="px-4 py-3">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${k.enabled ? 'bg-success-50 text-success-600' : 'bg-gray-100 text-gray-500'}">
+              ${k.enabled ? '启用' : '禁用'}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-right space-x-2">
+            <button onclick="toggleKey(${k.id}, ${!k.enabled})" class="text-primary-600 hover:text-primary-700 text-xs">${k.enabled ? '禁用' : '启用'}</button>
+            <button onclick="deleteKey(${k.id})" class="text-danger-500 hover:text-danger-600 text-xs">删除</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadLogs() {
+      const logs = await api('/admin/logs');
+      if (!logs) return;
+      const tbody = document.getElementById('logs-list');
+      tbody.innerHTML = logs.map(l => `
+        <tr class="border-b hover:bg-gray-50">
+          <td class="px-4 py-3 text-xs text-gray-500">${new Date(l.request_time).toLocaleString()}</td>
+          <td class="px-4 py-3">${l.model_name || '-'}</td>
+          <td class="px-4 py-3 font-mono text-xs">${l.api_key_mask || '-'}</td>
+          <td class="px-4 py-3">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${l.is_success ? 'bg-success-50 text-success-600' : 'bg-danger-50 text-danger-600'}">
+              ${l.is_success ? '成功' : '失败'}
+            </span>
+          </td>
+          <td class="px-4 py-3">${l.status_code || '-'}</td>
+          <td class="px-4 py-3 text-right">${l.latency_ms ? l.latency_ms + 'ms' : '-'}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadSettings() {
+      const data = await api('/admin/settings');
+      if (!data) return;
+      document.getElementById('setting-ua').value = data.user_agent || '';
+    }
+
+    function showAddKey() { document.getElementById('modal-add-key').classList.remove('hidden'); }
+    function hideAddKey() { document.getElementById('modal-add-key').classList.add('hidden'); }
+
+    async function submitAddKey() {
+      const key = document.getElementById('new-key-value').value.trim();
+      const name = document.getElementById('new-key-name').value.trim();
+      const weight = parseInt(document.getElementById('new-key-weight').value) || 1;
+      if (!key) return;
+      await api('/admin/keys', { method: 'POST', body: JSON.stringify({ key, name, weight }) });
+      hideAddKey();
+      document.getElementById('new-key-value').value = '';
+      loadKeys();
+      loadStats();
+    }
+
+    async function toggleKey(id, enabled) {
+      await api('/admin/keys/' + id, { method: 'PATCH', body: JSON.stringify({ enabled }) });
+      loadKeys();
+    }
+
+    async function deleteKey(id) {
+      if (!confirm('确定删除这个 Key 吗？')) return;
+      await api('/admin/keys/' + id, { method: 'DELETE' });
+      loadKeys();
+      loadStats();
+    }
+
+    async function saveSettings() {
+      const ua = document.getElementById('setting-ua').value.trim();
+      const pwd = document.getElementById('setting-pwd').value.trim();
+      await api('/admin/settings', { method: 'POST', body: JSON.stringify({ user_agent: ua, admin_password: pwd || undefined }) });
+      alert('设置已保存');
+      document.getElementById('setting-pwd').value = '';
+    }
+  </script>
+</body>
+</html>

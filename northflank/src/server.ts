@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import { corsMiddleware, adminAuth, clientAuth } from './middleware';
 import { handleProxy } from './proxy';
+import { handleAnthropicMessages, handleAnthropicModels } from './anthropic';
 import {
   listKeys,
   addKey,
@@ -26,7 +27,19 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'meridian' });
 });
 
-// OpenAI compatible API - catch all /v1/* routes
+// Anthropic /v1/messages (Anthropic-specific endpoint)
+app.post('/v1/messages', clientAuth, handleAnthropicMessages);
+
+// /v1/models - smart protocol detection
+app.get('/v1/models', clientAuth, (req, res) => {
+  const isAnthropic = req.headers['x-api-key'] || req.headers['anthropic-version'];
+  if (isAnthropic) {
+    return handleAnthropicModels(req, res);
+  }
+  return handleProxy(req, res);
+});
+
+// OpenAI compatible API - catch all other /v1/* routes
 app.use('/v1', clientAuth, handleProxy);
 
 // Admin API

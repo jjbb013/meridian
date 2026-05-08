@@ -4,7 +4,7 @@ import { getNextKey, recordUsage, getSetting } from './keyManager';
 const UPSTREAM_BASE = 'https://api.kimi.com/coding';
 
 export async function handleProxy(req: Request, res: Response): Promise<void> {
-  const url = new URL(req.url, `http://${req.headers.host}`);
+  const url = new URL(req.originalUrl || req.url, `http://${req.headers.host}`);
   const targetPath = url.pathname + url.search;
   const targetUrl = `${UPSTREAM_BASE}${targetPath}`;
 

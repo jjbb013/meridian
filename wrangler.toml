@@ -1,0 +1,8 @@
+name = "meridian"
+main = "src/index.ts"
+compatibility_date = "2025-05-01"
+
+# Cloudflare Workers 免费版限制：
+# - 每日 100,000 次请求
+# - 每次请求最多 50ms CPU 时间
+# 详见 https://developers.cloudflare.com/workers/platform/limits/

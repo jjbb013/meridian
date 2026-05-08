@@ -1,20 +1,26 @@
 {
   "name": "meridian",
   "version": "1.0.0",
-  "description": "Kimi API 中转代理 — Vercel 一键部署",
+  "description": "Kimi API 中转代理 — 支持 Vercel Edge Function & Cloudflare Workers",
   "scripts": {
     "deploy": "vercel --prod",
-    "dev": "vercel dev"
+    "deploy:cf": "wrangler deploy",
+    "dev": "vercel dev",
+    "dev:cf": "wrangler dev",
+    "secret:cf": "wrangler secret put KIMI_API_KEY"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
-    "vercel": "^41.0.0"
+    "vercel": "^41.0.0",
+    "wrangler": "^4.0.0"
   },
   "keywords": [
     "kimi",
     "api",
     "proxy",
     "vercel",
+    "cloudflare",
+    "workers",
     "moonshot"
   ],
   "license": "MIT"

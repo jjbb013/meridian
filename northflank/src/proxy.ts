@@ -3,6 +3,12 @@ import { getNextKey, recordUsage, getSetting } from './keyManager';
 
 const UPSTREAM_BASE = 'https://api.kimi.com/coding';
 
+// Headers that should not be forwarded (HTTP/2 incompatible or connection-level)
+const BLOCKED_HEADERS = new Set([
+  'connection', 'keep-alive', 'proxy-connection', 'transfer-encoding',
+  'upgrade', 'content-encoding', 'content-length', 'host',
+]);
+
 export async function handleProxy(req: Request, res: Response): Promise<void> {
   const url = new URL(req.originalUrl || req.url, `http://${req.headers.host}`);
   const targetPath = url.pathname + url.search;
@@ -49,17 +55,35 @@ export async function handleProxy(req: Request, res: Response): Promise<void> {
     recordUsage(keyRecord.id, success, statusCode, latency, success ? undefined : `HTTP ${statusCode}`);
 
     res.status(response.status);
+
+    // Only forward safe headers
     response.headers.forEach((value, key) => {
-      if (key.toLowerCase() !== 'content-encoding') {
+      const lowerKey = key.toLowerCase();
+      if (!BLOCKED_HEADERS.has(lowerKey) && !lowerKey.startsWith(':')) {
         res.setHeader(key, value);
       }
     });
+
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-    const body = await response.text();
-    res.send(body);
+    // Stream the response body instead of buffering
+    if (response.body) {
+      const reader = response.body.getReader();
+      const pump = async (): Promise<void> => {
+        const { done, value } = await reader.read();
+        if (done) {
+          res.end();
+          return;
+        }
+        res.write(Buffer.from(value));
+        return pump();
+      };
+      await pump();
+    } else {
+      res.end();
+    }
   } catch (err) {
     const latency = Date.now() - start;
     errorMsg = err instanceof Error ? err.message : 'Unknown error';

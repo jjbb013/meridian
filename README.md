@@ -3,11 +3,10 @@
 Kimi API 中转代理，支持 **Vercel Edge Function** 和 **Cloudflare Workers** 双平台部署。只需提供 Kimi API Key，一键部署，即可通过你自己的域名调用 Kimi API。
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjjbb013%2Fmeridian&env=KIMI_API_KEY&env-description=Kimi%20API%20Key%20from%20https%3A%2F%2Fplatform.moonshot.cn&project-name=meridian&repository-name=meridian)
-[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/jjbb013/meridian)
 
 ## 特性
 
-- ⚡ **双平台支持** — Vercel Edge Function + Cloudflare Workers
+- ⚡ **Vercel Edge Function** — 全球边缘节点加速
 - 🔑 **自动注入 API Key** — 未携带 Authorization 时自动使用环境变量中的 Key
 - 🌐 **完整 CORS 支持** — 开箱即用，支持浏览器端直接调用
 - 🚀 **一键部署** — 点击按钮或运行脚本，无需手动配置 Dashboard
@@ -57,48 +56,16 @@ chmod +x deploy.sh
 
 ---
 
-## 部署方式二：Cloudflare Workers
+## ⚠️ Cloudflare Workers 支持（实验性）
 
-### 方式 2a：点击 Deploy Button
+本项目包含 Cloudflare Workers 的代码和配置，但由于 **Kimi API (`api.kimi.com`) 本身也使用 Cloudflare 保护**，其 Bot Management 策略会拦截来自 Cloudflare Workers 数据中心 IP 的请求，导致 `/v1/*` 端点返回 403 验证页面。
 
-点击上方 **「Deploy to Cloudflare Workers」** 按钮：
-
-1. 登录你的 Cloudflare 账号
-2. Fork 本仓库到你自己的 GitHub 账号
-3. 在 Cloudflare Dashboard 中绑定 Fork 后的仓库
-4. 在 **Settings → Variables** 中添加：
-   - `KIMI_API_KEY` = 你的 Kimi API Key
-5. 点击 **Save and Deploy**
-
-### 方式 2b：本地脚本部署
+**因此，目前推荐仅使用 Vercel 部署。** 如果你仍想尝试 Cloudflare Workers：
 
 ```bash
-git clone https://github.com/jjbb013/meridian.git
-cd meridian
-chmod +x deploy-cf.sh
-./deploy-cf.sh
-```
-
-脚本会自动完成以下操作：
-- 检查并安装 Wrangler CLI
-- 引导 Cloudflare 登录（如未登录）
-- 交互式输入 Kimi API Key
-- 设置 Workers Secret
-- 部署到 Cloudflare Workers
-
-### 方式 2c：手动部署
-
-```bash
-# 安装依赖
 npm install
-
-# 登录 Cloudflare
 npx wrangler login
-
-# 设置 API Key（Secret）
-echo "your_kimi_api_key" | npx wrangler secret put KIMI_API_KEY
-
-# 部署
+npx wrangler secret put KIMI_API_KEY
 npx wrangler deploy
 ```
 
@@ -173,19 +140,16 @@ meridian/
 ├── api/
 │   ├── v1/
 │   │   ├── chat/
-│   │   │   └── completions.ts   # Vercel: /v1/chat/completions
-│   │   └── models.ts            # Vercel: /v1/models
-│   └── health.ts                # Vercel: /health
+│   │   │   └── completions.ts   # /v1/chat/completions
+│   │   └── models.ts            # /v1/models
+│   └── health.ts                # /health
 ├── src/
-│   ├── proxy.ts                 # 共享代理逻辑
-│   └── index.ts                 # Cloudflare Workers 入口
+│   └── proxy.ts                 # 共享代理逻辑
 ├── vercel.json                  # Vercel 路由配置
-├── wrangler.toml                # Cloudflare Workers 配置
 ├── package.json                 # 依赖与脚本
 ├── tsconfig.json                # TypeScript 配置
 ├── .env.example                 # 环境变量模板
-├── deploy.sh                    # Vercel 一键部署脚本
-├── deploy-cf.sh                 # Cloudflare 一键部署脚本
+├── deploy.sh                    # 一键部署脚本
 └── README.md                    # 本文档
 ```
 
@@ -201,14 +165,11 @@ meridian/
 
 ## 平台限制
 
-| 平台 | 免费额度 | 限制说明 |
-|------|---------|---------|
-| Vercel | 100 GB·月 带宽 | Edge Function 执行时间最长 30s |
-| Cloudflare Workers | 100,000 请求/天 | 单次请求 CPU 时间最长 50ms |
+Vercel 免费版有 [使用限制](https://vercel.com/docs/concepts/limits/overview)，高并发场景请升级套餐。
 
 ---
 
-## 手动部署（Vercel）
+## 手动部署
 
 如果你不想使用 `deploy.sh`，也可以手动操作：
 

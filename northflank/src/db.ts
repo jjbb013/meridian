@@ -2,15 +2,21 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-const DB_DIR = process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : './data';
-const DB_PATH = process.env.DB_PATH || './data/meridian.db';
+const DB_TYPE = process.env.DATABASE_TYPE || 'sqlite';
+const DB_NAME = process.env.SQLITE_DATABASE || ':memory:';
 
-// Ensure directory exists
-if (!fs.existsSync(DB_DIR)) {
-  fs.mkdirSync(DB_DIR, { recursive: true });
+let dbPath: string;
+if (DB_NAME === ':memory:') {
+  dbPath = ':memory:';
+} else {
+  const dbDir = process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : '/tmp/data';
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+  }
+  dbPath = process.env.DB_PATH || path.join(dbDir, `${DB_NAME}.db`);
 }
 
-const db = new Database(DB_PATH);
+const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
 // Initialize schema
@@ -48,11 +54,27 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_logs_key ON request_logs(api_key_id);
 `);
 
+// Load API keys from environment variable
+const apiKeysEnv = process.env.API_KEYS;
+if (apiKeysEnv) {
+  try {
+    const keys: string[] = JSON.parse(apiKeysEnv);
+    // Clear existing keys and insert fresh ones from env
+    db.prepare('DELETE FROM api_keys').run();
+    const insert = db.prepare('INSERT INTO api_keys (key, name, weight, enabled) VALUES (?, ?, ?, ?)');
+    for (let i = 0; i < keys.length; i++) {
+      insert.run(keys[i], `Key ${i + 1}`, 1, 1);
+    }
+  } catch (e) {
+    console.error('Failed to parse API_KEYS:', e);
+  }
+}
+
 // Default settings
 const defaults: Record<string, string> = {
   upstream_base: 'https://api.kimi.com/coding',
   user_agent: 'claude-code/1.0',
-  admin_password: 'admin',
+  admin_password: process.env.ADMIN_PASSWORD || 'admin',
 };
 
 for (const [k, v] of Object.entries(defaults)) {

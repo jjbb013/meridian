@@ -1,73 +1,86 @@
 # Meridian — Northflank 部署版
 
-Kimi API 中转代理，带 Web UI 管理后台，支持多 Key 轮询、请求日志和统计监控。
+Kimi API 中转代理，带 Web UI 管理后台。支持多 Key 轮询、客户端 Token 认证、请求日志和统计监控。
 
 ## 特性
 
-- 🖥️ **Web 管理后台** — 可视化配置 API Keys、查看日志和统计
+- 🖥️ **Web 管理后台** — 可视化查看日志和统计
 - 🔑 **多 Key 轮询** — 支持权重配置，自动负载均衡
+- 🔐 **客户端 Token 认证** — 可选的访问控制
 - 📊 **实时监控** — 请求数、成功率、平均延迟、Key 状态
-- 📝 **请求日志** — 记录每次请求的详情，方便排查问题
-- 🐳 **Docker 部署** — 一键部署到 Northflank 等容器平台
-- 🔒 **管理后台认证** — 密码保护，安全可控
+- 📝 **请求日志** — 记录每次请求的详情
+- 🐳 **Docker 部署** — 零 Volume，纯环境变量配置
+- 💾 **SQLite** — 无需外部数据库
 
 ## 部署到 Northflank
-
-### 方式一：使用 Git 仓库
 
 1. 在 Northflank Dashboard 创建新项目
 2. 选择 **Create Service** → **Combined service**
 3. 选择 Git 提供商，连接本仓库
-4. 构建方式选择 **Dockerfile**，路径填 `./northflank/Dockerfile`
-5. 在 **Environment variables** 中添加：
-   - `ADMIN_PASSWORD` = 你的管理后台密码（默认 `admin`）
-6. 在 **Volumes** 中添加持久化卷：
-   - 挂载路径：`/data`（用于保存 SQLite 数据库）
-7. 点击 **Create Service**
-
-### 方式二：使用 Docker 镜像
-
-1. 本地构建镜像：
-   ```bash
-   cd northflank
-   docker build -t meridian-northflank .
-   ```
-2. 推送到镜像仓库（Docker Hub / GitHub Container Registry）
-3. 在 Northflank 选择镜像部署
+4. 构建方式选择 **Dockerfile**，路径填 `./Dockerfile.northflank`
+5. 在 **Environment variables** 中添加（下方有说明）
+6. 点击 **Create Service**
 
 ## 环境变量
 
 | 变量名 | 必填 | 默认值 | 说明 |
 |--------|------|--------|------|
-| `PORT` | 否 | `3000` | 服务端口 |
+| `API_KEYS` | **是** | `[]` | Kimi API Keys，JSON 数组格式，如 `["sk-xxx","sk-yyy"]` |
 | `ADMIN_PASSWORD` | 否 | `admin` | 管理后台密码 |
-| `DB_PATH` | 否 | `./data/meridian.db` | SQLite 数据库路径 |
-| `UPSTREAM_BASE` | 否 | `https://api.kimi.com/coding` | 上游 API 地址 |
+| `ALLOWED_TOKENS` | 否 | — | 客户端访问令牌，JSON 数组格式。设置后客户端必须携带匹配的 Token |
+| `DATABASE_TYPE` | 否 | `sqlite` | 数据库类型 |
+| `SQLITE_DATABASE` | 否 | `default_db` | SQLite 数据库文件名，填 `:memory:` 则使用内存模式（重启丢失数据） |
 | `USER_AGENT` | 否 | `claude-code/1.0` | 请求上游时使用的 User-Agent |
+| `PORT` | 否 | `3000` | 服务端口 |
 
-## 管理后台
+### 最小配置示例
 
-部署完成后访问你的服务地址，默认进入管理后台登录页。
+```
+API_KEYS=["sk-your-kimi-key-1","sk-your-kimi-key-2"]
+ADMIN_PASSWORD=your-admin-password
+```
 
-### 初始配置
+### 带客户端认证的示例
 
-1. 登录管理后台（默认密码 `admin`）
-2. 进入 **API Keys** 页面，添加你的 Kimi API Keys
-3. 进入 **设置** 页面，修改管理密码
+```
+API_KEYS=["sk-your-kimi-key-1"]
+ADMIN_PASSWORD=your-admin-password
+ALLOWED_TOKENS=["sk-willpan","sk-friend-1"]
+```
 
-### API 使用
+## 客户端配置
+
+### 使用 ALLOWED_TOKENS（推荐）
 
 ```bash
 curl https://<your-domain>/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your_token" \
-  -d '{
-    "model": "kimi-for-coding",
-    "messages": [{"role": "user", "content": "hello"}]
-  }'
+  -H "Authorization: Bearer sk-willpan" \
+  -d '{"model":"kimi-for-coding","messages":[{"role":"user","content":"hello"}]}'
 ```
 
-如果没有携带 `Authorization`，系统会自动使用轮询的 API Key。
+### 不使用 ALLOWED_TOKENS（开放访问）
+
+```bash
+curl https://<your-domain>/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model":"kimi-for-coding","messages":[{"role":"user","content":"hello"}]}'
+```
+
+> 不设置 `ALLOWED_TOKENS` 时，任何人都可以直接调用 API。代理会自动使用环境变量中的 API Key 转发请求。
+
+## 管理后台
+
+部署完成后访问你的服务地址：
+- 初始密码：`admin`（或你设置的 `ADMIN_PASSWORD`）
+
+## API 端点
+
+| 端点 | 说明 |
+|------|------|
+| `GET /health` | 健康检查 |
+| `POST /v1/chat/completions` | OpenAI 兼容聊天接口 |
+| `GET /v1/models` | 模型列表 |
 
 ## 项目结构
 

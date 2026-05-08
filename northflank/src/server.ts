@@ -1,6 +1,6 @@
 import express from 'express';
 import path from 'path';
-import { corsMiddleware, adminAuth } from './middleware';
+import { corsMiddleware, adminAuth, clientAuth } from './middleware';
 import { handleProxy } from './proxy';
 import {
   listKeys,
@@ -27,7 +27,7 @@ app.get('/health', (_req, res) => {
 });
 
 // OpenAI compatible API - catch all /v1/* routes
-app.use('/v1', handleProxy);
+app.use('/v1', clientAuth, handleProxy);
 
 // Admin API
 app.get('/admin/stats', adminAuth, (_req, res) => {

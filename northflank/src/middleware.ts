@@ -12,6 +12,29 @@ export function adminAuth(req: Request, res: Response, next: NextFunction): void
   next();
 }
 
+export function clientAuth(req: Request, res: Response, next: NextFunction): void {
+  const allowedTokensEnv = process.env.ALLOWED_TOKENS;
+  if (!allowedTokensEnv) {
+    next();
+    return;
+  }
+
+  let allowedTokens: string[];
+  try {
+    allowedTokens = JSON.parse(allowedTokensEnv);
+  } catch {
+    res.status(500).json({ error: 'Invalid ALLOWED_TOKENS configuration' });
+    return;
+  }
+
+  const clientToken = req.headers.authorization?.replace('Bearer ', '');
+  if (!clientToken || !allowedTokens.includes(clientToken)) {
+    res.status(403).json({ error: 'Invalid or missing token' });
+    return;
+  }
+  next();
+}
+
 export function corsMiddleware(req: Request, res: Response, next: NextFunction): void {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');

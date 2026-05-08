@@ -51,6 +51,9 @@ export async function handleProxy(
   const headers = new Headers(request.headers);
   headers.set('Host', 'api.kimi.com');
   headers.set('User-Agent', 'claude-code/1.0');
+  headers.set('Accept', 'application/json, text/event-stream');
+  headers.set('Accept-Language', 'en-US,en;q=0.9');
+  headers.set('Accept-Encoding', 'gzip, deflate, br');
 
   if (!headers.has('Authorization') && apiKey) {
     headers.set('Authorization', `Bearer ${apiKey}`);

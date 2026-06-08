@@ -24,7 +24,7 @@ router.get('/health', (req, res) => {
     const dbHealthy = !!dbCheck;
     
     // 检查 API Keys
-    const keyCount = db.prepare('SELECT COUNT(*) as count FROM api_keys WHERE enabled = 1').get();
+    const keyCount = db.prepare('SELECT COUNT(*) as count FROM api_keys WHERE enabled = 1').get() as { count: number } | undefined;
     const keysHealthy = (keyCount?.count || 0) > 0;
     
     // 检查最近错误率
@@ -35,9 +35,9 @@ router.get('/health', (req, res) => {
         SUM(CASE WHEN is_success = 1 THEN 1 ELSE 0 END) as success
       FROM request_logs
       WHERE timestamp >= datetime(?)
-    `).get(fiveMinutesAgo);
+    `).get(fiveMinutesAgo) as { total: number; success: number } | undefined;
     
-    const errorRate = recentStats?.total > 0 
+    const errorRate = recentStats && recentStats.total > 0 
       ? ((recentStats.total - (recentStats.success || 0)) / recentStats.total * 100).toFixed(1)
       : '0.0';
     
@@ -69,7 +69,7 @@ router.get('/health', (req, res) => {
 router.get('/health/detailed', (req, res) => {
   try {
     // 数据库详情
-    const dbSize = db.prepare("SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()").get();
+    const dbSize = db.prepare("SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()").get() as { size: number } | undefined;
     
     // Key 详情
     const keys = db.prepare(`
@@ -87,7 +87,7 @@ router.get('/health/detailed', (req, res) => {
         AVG(response_latency_ms) as avg_latency
       FROM request_logs
       WHERE timestamp >= datetime(?)
-    `).get(oneHourAgo);
+    `).get(oneHourAgo) as { total: number; success: number; avg_latency: number } | undefined;
     
     res.json({
       status: 'ok',

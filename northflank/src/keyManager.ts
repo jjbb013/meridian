@@ -1,4 +1,4 @@
-import db from './db';
+import db from './db-enhanced';
 
 export interface ApiKey {
   id: number;
@@ -39,8 +39,8 @@ export function recordUsage(keyId: number, success: boolean, statusCode?: number
   const mask = db.prepare('SELECT key FROM api_keys WHERE id = ?').pluck().get(keyId) as string;
   const maskDisplay = mask ? mask.slice(0, 4) + '****' + mask.slice(-4) : '';
   db.prepare(`
-    INSERT INTO request_logs (model_name, api_key_id, api_key_mask, is_success, status_code, latency_ms, error_msg)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO request_logs (request_model, api_key_id, api_key_mask, is_success, response_status, response_latency_ms, error_message, timestamp)
+    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
   `).run('', keyId, maskDisplay, success ? 1 : 0, statusCode || null, latencyMs || null, errorMsg || null);
 
   if (!success) {
@@ -84,7 +84,7 @@ export function updateKey(id: number, updates: Partial<Pick<ApiKey, 'name' | 'we
 export function getStats(): { total_requests: number; success_rate: number; avg_latency: number; key_count: number } {
   const total = (db.prepare('SELECT COUNT(*) FROM request_logs').pluck().get() as number) || 0;
   const success = (db.prepare('SELECT COUNT(*) FROM request_logs WHERE is_success = 1').pluck().get() as number) || 0;
-  const avgLatency = (db.prepare('SELECT AVG(latency_ms) FROM request_logs WHERE latency_ms IS NOT NULL').pluck().get() as number) || 0;
+  const avgLatency = (db.prepare('SELECT AVG(response_latency_ms) FROM request_logs WHERE response_latency_ms IS NOT NULL').pluck().get() as number) || 0;
   const keyCount = (db.prepare('SELECT COUNT(*) FROM api_keys').pluck().get() as number) || 0;
   return {
     total_requests: total,
@@ -96,7 +96,7 @@ export function getStats(): { total_requests: number; success_rate: number; avg_
 
 export function getRecentLogs(limit = 100): Array<Record<string, unknown>> {
   return db.prepare(`
-    SELECT * FROM request_logs ORDER BY request_time DESC LIMIT ?
+    SELECT * FROM request_logs ORDER BY timestamp DESC LIMIT ?
   `).all(limit) as Array<Record<string, unknown>>;
 }
 

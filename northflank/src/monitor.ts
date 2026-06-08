@@ -336,32 +336,32 @@ router.get('/api/monitor/stats', (req, res) => {
   const total = db.prepare(`
     SELECT COUNT(*) as count FROM request_logs 
     WHERE timestamp >= datetime(?)
-  `).get(yesterday.toISOString());
+  `).get(yesterday.toISOString()) as { count: number } | undefined;
   
   const success = db.prepare(`
     SELECT COUNT(*) as count FROM request_logs 
     WHERE timestamp >= datetime(?) AND is_success = 1
-  `).get(yesterday.toISOString());
+  `).get(yesterday.toISOString()) as { count: number } | undefined;
   
   const error400 = db.prepare(`
     SELECT COUNT(*) as count FROM request_logs 
     WHERE timestamp >= datetime(?) AND response_status = 400
-  `).get(yesterday.toISOString());
+  `).get(yesterday.toISOString()) as { count: number } | undefined;
   
   const error429 = db.prepare(`
     SELECT COUNT(*) as count FROM request_logs 
     WHERE timestamp >= datetime(?) AND response_status = 429
-  `).get(yesterday.toISOString());
+  `).get(yesterday.toISOString()) as { count: number } | undefined;
   
   const latency = db.prepare(`
     SELECT AVG(response_latency_ms) as avg FROM request_logs 
     WHERE timestamp >= datetime(?) AND is_success = 1
-  `).get(yesterday.toISOString());
+  `).get(yesterday.toISOString()) as { avg: number } | undefined;
   
   res.json({
     total: total?.count || 0,
     success: success?.count || 0,
-    success_rate: total?.count > 0 ? Math.round((success?.count || 0) / total.count * 100) : 0,
+    success_rate: total && total.count > 0 ? Math.round((success?.count || 0) / total.count * 100) : 0,
     error_400: error400?.count || 0,
     error_429: error429?.count || 0,
     avg_latency: Math.round(latency?.avg || 0)

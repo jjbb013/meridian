@@ -41,7 +41,7 @@ router.post('/api/ios/chat', async (req, res) => {
       WHERE enabled = 1 
       ORDER BY last_used_at ASC 
       LIMIT 1
-    `).get();
+    `).get() as { id: number; key: string } | undefined;
     
     if (!keyRecord) {
       return res.status(503).json({
@@ -105,7 +105,7 @@ router.post('/api/ios/chat', async (req, res) => {
  * GET /api/ios/health
  */
 router.get('/api/ios/health', (req, res) => {
-  const keyCount = db.prepare('SELECT COUNT(*) as count FROM api_keys WHERE enabled = 1').get();
+  const keyCount = db.prepare('SELECT COUNT(*) as count FROM api_keys WHERE enabled = 1').get() as { count: number } | undefined;
   
   res.json({
     success: true,

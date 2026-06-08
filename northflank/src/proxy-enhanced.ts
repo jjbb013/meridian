@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { logRequest } from './logger';
+import { logRequest, cleanupOldLogs } from './logger';
 import db from './db-enhanced';
-import { KeyManager } from './keyManager';
 
 interface ProxyLogContext {
   requestId: string;
@@ -21,7 +20,7 @@ interface ProxyLogContext {
  * 创建代理日志中间件
  * 在请求开始时创建上下文，在响应结束时记录日志
  */
-export function createProxyLogger(keyManager: KeyManager) {
+export function createProxyLogger() {
   return {
     // 请求开始时调用
     start: (req: Request, apiKeyId: number, apiKey: string): ProxyLogContext => {
@@ -93,7 +92,7 @@ export function createProxyLogger(keyManager: KeyManager) {
         if (error) {
           upstreamError = error.message || String(error);
           if (!errorMessage) {
-            errorMessage = upstreamError.substring(0, 200);
+            errorMessage = upstreamError?.substring(0, 200) ?? String(error);
           }
         }
       }
@@ -167,4 +166,4 @@ export function startLogCleanupScheduler(): void {
   }, CLEANUP_INTERVAL);
 }
 
-import { cleanupOldLogs } from './logger';
+

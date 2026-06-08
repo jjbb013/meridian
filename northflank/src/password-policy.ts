@@ -50,7 +50,7 @@ export function hashPassword(password: string): string {
  * 检查密码是否过期
  */
 export function isPasswordExpired(): boolean {
-  const setting = db.prepare("SELECT value, updated_at FROM settings WHERE key = 'admin_password'").get();
+  const setting = db.prepare("SELECT value, updated_at FROM settings WHERE key = 'admin_password'").get() as { value?: string; updated_at?: string } | undefined;
   if (!setting?.updated_at) return false;
   
   const lastUpdate = new Date(setting.updated_at);
@@ -97,7 +97,7 @@ router.post('/api/change-password', (req, res) => {
     }
     
     // 验证旧密码
-    const currentHash = db.prepare("SELECT value FROM settings WHERE key = 'admin_password'").get();
+    const currentHash = db.prepare("SELECT value FROM settings WHERE key = 'admin_password'").get() as { value?: string } | undefined;
     if (currentHash?.value !== hashPassword(old_password)) {
       return res.status(401).json({
         success: false,
@@ -138,7 +138,7 @@ router.post('/api/change-password', (req, res) => {
  */
 router.get('/api/password-status', (req, res) => {
   try {
-    const setting = db.prepare("SELECT updated_at FROM settings WHERE key = 'admin_password'").get();
+    const setting = db.prepare("SELECT updated_at FROM settings WHERE key = 'admin_password'").get() as { updated_at?: string } | undefined;
     const lastUpdate = setting?.updated_at ? new Date(setting.updated_at) : null;
     const daysSinceUpdate = lastUpdate 
       ? Math.floor((Date.now() - lastUpdate.getTime()) / (24 * 60 * 60 * 1000))

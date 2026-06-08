@@ -55,7 +55,7 @@ export function stickySessionMiddleware(req: Request, res: Response, next: NextF
   req.sessionHash = sessionHash;
   const binding = getSessionBinding(sessionHash);
   if (binding) {
-    const keyRecord = db.prepare('SELECT id, enabled FROM api_keys WHERE id = ?').get(binding.apiKeyId);
+    const keyRecord = db.prepare('SELECT id, enabled FROM api_keys WHERE id = ?').get(binding.apiKeyId) as { enabled?: number } | undefined;
     if (keyRecord && keyRecord.enabled) {
       req.preferredKeyId = binding.apiKeyId;
     }

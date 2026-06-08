@@ -199,6 +199,6 @@ export function getLogCount(filter: LogFilter = {}): number {
   
   const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
   
-  const result = db.prepare(`SELECT COUNT(*) as count FROM request_logs ${whereClause}`).get(...params);
+  const result = db.prepare(`SELECT COUNT(*) as count FROM request_logs ${whereClause}`).get(...params) as { count: number } | undefined;
   return result?.count || 0;
 }

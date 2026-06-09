@@ -317,10 +317,31 @@
 
     function toBeijingTime(ts) {
       if (!ts) return '-';
-      const utc = new Date(ts + 'Z');
-      const beijing = new Date(utc.getTime() + 8 * 60 * 60 * 1000);
+      const d = new Date(ts + 'Z');
+      let year = d.getUTCFullYear();
+      let month = d.getUTCMonth();
+      let day = d.getUTCDate();
+      let hour = d.getUTCHours() + 8;
+      let minute = d.getUTCMinutes();
+      let second = d.getUTCSeconds();
+
+      // 处理跨天
+      if (hour >= 24) {
+        hour -= 24;
+        day += 1;
+        const daysInMonth = new Date(year, month + 1, 0).getUTCDate();
+        if (day > daysInMonth) {
+          day = 1;
+          month += 1;
+          if (month > 11) {
+            month = 0;
+            year += 1;
+          }
+        }
+      }
+
       const pad = n => n.toString().padStart(2, '0');
-      return `${beijing.getFullYear()}/${pad(beijing.getMonth()+1)}/${pad(beijing.getDate())} ${pad(beijing.getHours())}:${pad(beijing.getMinutes())}:${pad(beijing.getSeconds())}`;
+      return `${year}/${pad(month + 1)}/${pad(day)} ${pad(hour)}:${pad(minute)}:${pad(second)}`;
     }
 
     async function loadLogs() {

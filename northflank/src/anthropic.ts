@@ -78,16 +78,18 @@ export async function handleAnthropicMessages(req: Request, res: Response): Prom
     statusCode = upstreamRes.status;
     success = upstreamRes.ok;
     const latency = Date.now() - start;
-    recordUsage(keyRecord.id, success, statusCode, latency, success ? undefined : `HTTP ${statusCode}`);
 
     if (!upstreamRes.ok) {
       const errText = await upstreamRes.text();
+      recordUsage(keyRecord.id, false, statusCode, latency, `HTTP ${statusCode}: ${errText}`, body.model);
       res.status(upstreamRes.status).json({
         type: 'error',
         error: { type: 'api_error', message: errText },
       });
       return;
     }
+
+    recordUsage(keyRecord.id, true, statusCode, latency, undefined, body.model);
 
     if (isStreaming) {
       res.setHeader('Content-Type', 'text/event-stream');

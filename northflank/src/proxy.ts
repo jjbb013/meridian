@@ -36,6 +36,8 @@ export async function handleProxy(req: Request, res: Response): Promise<void> {
   let statusCode = 0;
   let errorMsg: string | undefined;
 
+  const requestModel = req.body?.model || '';
+
   try {
     const response = await fetch(targetUrl, {
       method: req.method,
@@ -45,9 +47,37 @@ export async function handleProxy(req: Request, res: Response): Promise<void> {
 
     statusCode = response.status;
     success = response.ok;
-
     const latency = Date.now() - start;
-    recordUsage(keyRecord.id, success, statusCode, latency, success ? undefined : `HTTP ${statusCode}`);
+
+    if (!success) {
+      // Error response: read body for logging and client response
+      const errorBody = await response.text();
+      errorMsg = `HTTP ${statusCode}: ${errorBody}`;
+      recordUsage(keyRecord.id, false, statusCode, latency, errorMsg, requestModel);
+
+      res.status(statusCode);
+      response.headers.forEach((value, key) => {
+        const lowerKey = key.toLowerCase();
+        if (!BLOCKED_HEADERS.has(lowerKey) && !lowerKey.startsWith(':')) {
+          res.setHeader(key, value);
+        }
+      });
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+      // Try to parse as JSON, fallback to wrapping in error object
+      try {
+        const parsed = JSON.parse(errorBody);
+        res.json(parsed);
+      } catch {
+        res.json({ error: { message: errorBody, type: 'upstream_error' } });
+      }
+      return;
+    }
+
+    // Success response: record usage and stream
+    recordUsage(keyRecord.id, true, statusCode, latency, undefined, requestModel);
 
     res.status(response.status);
 
@@ -82,7 +112,7 @@ export async function handleProxy(req: Request, res: Response): Promise<void> {
   } catch (err) {
     const latency = Date.now() - start;
     errorMsg = err instanceof Error ? err.message : 'Unknown error';
-    recordUsage(keyRecord.id, false, 0, latency, errorMsg);
+    recordUsage(keyRecord.id, false, 0, latency, errorMsg, requestModel);
     res.status(502).json({ error: { message: errorMsg, type: 'proxy_error' } });
   }
 }

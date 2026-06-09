@@ -196,12 +196,13 @@
             <table class="w-full text-sm">
               <thead class="bg-gray-50 border-b">
                 <tr>
-                  <th class="text-left px-4 py-3 font-medium text-gray-600">时间</th>
-                  <th class="text-left px-4 py-3 font-medium text-gray-600">模型</th>
-                  <th class="text-left px-4 py-3 font-medium text-gray-600">Key</th>
-                  <th class="text-left px-4 py-3 font-medium text-gray-600">状态</th>
-                  <th class="text-left px-4 py-3 font-medium text-gray-600">状态码</th>
-                  <th class="text-right px-4 py-3 font-medium text-gray-600">延迟</th>
+                  <th class="text-left px-4 py-3 font-medium text-gray-600 whitespace-nowrap">时间</th>
+                  <th class="text-left px-4 py-3 font-medium text-gray-600 whitespace-nowrap">模型</th>
+                  <th class="text-left px-4 py-3 font-medium text-gray-600 whitespace-nowrap">Key</th>
+                  <th class="text-left px-4 py-3 font-medium text-gray-600 whitespace-nowrap">状态</th>
+                  <th class="text-left px-4 py-3 font-medium text-gray-600 whitespace-nowrap">状态码</th>
+                  <th class="text-right px-4 py-3 font-medium text-gray-600 whitespace-nowrap">延迟</th>
+                  <th class="text-left px-4 py-3 font-medium text-gray-600">错误信息</th>
                 </tr>
               </thead>
               <tbody id="logs-list"></tbody>
@@ -314,25 +315,43 @@
       `).join('');
     }
 
+    function toBeijingTime(ts) {
+      if (!ts) return '-';
+      const utc = new Date(ts + 'Z');
+      const beijing = new Date(utc.getTime() + 8 * 60 * 60 * 1000);
+      const pad = n => n.toString().padStart(2, '0');
+      return `${beijing.getFullYear()}/${pad(beijing.getMonth()+1)}/${pad(beijing.getDate())} ${pad(beijing.getHours())}:${pad(beijing.getMinutes())}:${pad(beijing.getSeconds())}`;
+    }
+
     async function loadLogs() {
       const logs = await api('/admin/logs');
       if (!logs) return;
       const tbody = document.getElementById('logs-list');
-      const beijingOpts = { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
-      tbody.innerHTML = logs.map(l => `
+      tbody.innerHTML = logs.map(l => {
+        let errorDisplay = '-';
+        if (l.error_message) {
+          try {
+            const parsed = JSON.parse(l.error_message.replace(/^HTTP \d+:\s*/, ''));
+            errorDisplay = parsed.error?.message || parsed.message || l.error_message;
+          } catch {
+            errorDisplay = l.error_message;
+          }
+        }
+        return `
         <tr class="border-b hover:bg-gray-50">
-          <td class="px-4 py-3 text-xs text-gray-500">${l.timestamp ? new Date(l.timestamp).toLocaleString('zh-CN', beijingOpts) : '-'}</td>
-          <td class="px-4 py-3">${l.request_model || '-'}</td>
-          <td class="px-4 py-3 font-mono text-xs">${l.api_key_mask || '-'}</td>
-          <td class="px-4 py-3">
+          <td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">${toBeijingTime(l.timestamp)}</td>
+          <td class="px-4 py-3 whitespace-nowrap">${l.request_model || '-'}</td>
+          <td class="px-4 py-3 font-mono text-xs whitespace-nowrap">${l.api_key_mask || '-'}</td>
+          <td class="px-4 py-3 whitespace-nowrap">
             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${l.is_success ? 'bg-success-50 text-success-600' : 'bg-danger-50 text-danger-600'}">
               ${l.is_success ? '成功' : '失败'}
             </span>
           </td>
-          <td class="px-4 py-3">${l.response_status || '-'}</td>
-          <td class="px-4 py-3 text-right">${l.response_latency_ms ? l.response_latency_ms + 'ms' : '-'}</td>
+          <td class="px-4 py-3 whitespace-nowrap">${l.response_status || '-'}</td>
+          <td class="px-4 py-3 text-right whitespace-nowrap">${l.response_latency_ms ? l.response_latency_ms + 'ms' : '-'}</td>
+          <td class="px-4 py-3 text-xs text-gray-600 max-w-xs truncate" title="${errorDisplay}">${errorDisplay}</td>
         </tr>
-      `).join('');
+      `}).join('');
     }
 
     async function loadSettings() {

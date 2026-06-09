@@ -39,9 +39,9 @@ export function recordUsage(keyId: number, success: boolean, statusCode?: number
   const mask = db.prepare('SELECT key FROM api_keys WHERE id = ?').pluck().get(keyId) as string;
   const maskDisplay = mask ? mask.slice(0, 4) + '****' + mask.slice(-4) : '';
   db.prepare(`
-    INSERT INTO request_logs (request_model, api_key_id, api_key_mask, is_success, response_status, response_latency_ms, error_message, timestamp)
-    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
-  `).run('', keyId, maskDisplay, success ? 1 : 0, statusCode || null, latencyMs || null, errorMsg || null);
+    INSERT INTO request_logs (request_id, request_model, api_key_id, api_key_mask, is_success, response_status, response_latency_ms, error_message, timestamp)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+  `).run(Date.now().toString(), '', keyId, maskDisplay, success ? 1 : 0, statusCode || null, latencyMs || null, errorMsg || null);
 
   if (!success) {
     db.prepare('UPDATE api_keys SET failure_count = failure_count + 1 WHERE id = ?').run(keyId);

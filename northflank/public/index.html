@@ -318,18 +318,19 @@
       const logs = await api('/admin/logs');
       if (!logs) return;
       const tbody = document.getElementById('logs-list');
+      const beijingOpts = { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
       tbody.innerHTML = logs.map(l => `
         <tr class="border-b hover:bg-gray-50">
-          <td class="px-4 py-3 text-xs text-gray-500">${new Date(l.request_time).toLocaleString()}</td>
-          <td class="px-4 py-3">${l.model_name || '-'}</td>
+          <td class="px-4 py-3 text-xs text-gray-500">${l.timestamp ? new Date(l.timestamp).toLocaleString('zh-CN', beijingOpts) : '-'}</td>
+          <td class="px-4 py-3">${l.request_model || '-'}</td>
           <td class="px-4 py-3 font-mono text-xs">${l.api_key_mask || '-'}</td>
           <td class="px-4 py-3">
             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${l.is_success ? 'bg-success-50 text-success-600' : 'bg-danger-50 text-danger-600'}">
               ${l.is_success ? '成功' : '失败'}
             </span>
           </td>
-          <td class="px-4 py-3">${l.status_code || '-'}</td>
-          <td class="px-4 py-3 text-right">${l.latency_ms ? l.latency_ms + 'ms' : '-'}</td>
+          <td class="px-4 py-3">${l.response_status || '-'}</td>
+          <td class="px-4 py-3 text-right">${l.response_latency_ms ? l.response_latency_ms + 'ms' : '-'}</td>
         </tr>
       `).join('');
     }
